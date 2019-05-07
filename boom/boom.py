@@ -365,7 +365,7 @@ def main():
 
     group.add_argument('-d', '--duration', help='Duration in seconds',
                        type=int)
-    parser.add_argument('--unix-socket', help="unix domain socket support", type=str, default=None)
+    parser.add_argument('--unix-socket', help="unix domain socket support, you can use like --unix-socket /var/run/docker.sock", type=str, default=None)
     parser.add_argument('url', help='URL to hit', nargs='?')
     args = parser.parse_args()
 
