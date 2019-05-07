@@ -263,6 +263,7 @@ def resolve(url):
         port = parts.port
 
     original = parts.host
+
     resolved = gethostbyname(parts.host)
 
     # Don't use a resolved hostname for SSL requests otherwise the
@@ -364,7 +365,7 @@ def main():
 
     group.add_argument('-d', '--duration', help='Duration in seconds',
                        type=int)
-
+    parser.add_argument('--unix-socket', help="unix domain socket support", type=str, default=None)
     parser.add_argument('url', help='URL to hit', nargs='?')
     args = parser.parse_args()
 
@@ -385,8 +386,27 @@ def main():
     if args.requests is None and args.duration is None:
         args.requests = 1
 
+    if args.unix_socket:
+        import requests_unixsocket
+        requests_unixsocket.monkeypatch()
+        unix_domain_url = args.unix_socket
+
+    def _convert_unix_domain(unix_domain):
+        return unix_domain.replace("/", "%2F")
+
+    def concat_unix_socket_url(origin_url, unix_domain_url):
+        parts = urlparse.urlparse(origin_url)
+        netloc = _convert_unix_domain(unix_domain_url)
+        scheme = "http+unix"
+        return urlparse.urlunparse((scheme, netloc, parts.path or '',
+                                 '', parts.query or '',
+                                 parts.fragment or ''))
+
+
     try:
         url, original, resolved = resolve(args.url)
+        if args.unix_socket:
+            url = concat_unix_socket_url(url, args.unix_socket)
     except gaierror as e:
         print_errors(("DNS resolution failed for %s (%s)" %
                       (args.url, str(e)),))
